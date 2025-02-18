@@ -1,13 +1,15 @@
 import { createClient } from "redis";
 
-let redis: ReturnType<typeof createClient> | null = null;
+let redisClient: ReturnType<typeof createClient> | null = null;
 
-async function getRedisClient() {
-  if (!redis) {
-    redis = createClient({ url: process.env.REDIS_URL });
-    await redis.connect();
+async function getRedisClient(): Promise<ReturnType<typeof createClient>> {
+  if (!redisClient) {
+    redisClient = createClient({
+      url: process.env.REDIS_URL,
+    });
+    await redisClient.connect();
   }
-  return redis;
+  return redisClient;
 }
 
 export interface Message {
@@ -17,7 +19,7 @@ export interface Message {
 }
 
 export async function saveMessage(content: string): Promise<void> {
-  const redis = await getRedisClient();
+  const client = await getRedisClient();
   const message: Message = {
     id: crypto.randomUUID(),
     content,
@@ -25,9 +27,9 @@ export async function saveMessage(content: string): Promise<void> {
   };
 
   // messages:list anahtarında tüm mesaj ID'lerini saklıyoruz
-  await redis.lPush("messages:list", message.id);
+  await client.lPush("messages:list", message.id);
   // Her mesajı kendi ID'si ile saklıyoruz
-  await redis.hSet(`message:${message.id}`, {
+  await client.hSet(`message:${message.id}`, {
     id: message.id,
     content: message.content,
     createdAt: message.createdAt,
@@ -35,23 +37,26 @@ export async function saveMessage(content: string): Promise<void> {
 }
 
 export async function getMessages(): Promise<Message[]> {
-  const redis = await getRedisClient();
+  const client = await getRedisClient();
 
   // Tüm mesaj ID'lerini al
-  const messageIds = await redis.lRange("messages:list", 0, -1);
+  const messageIds = await client.lRange("messages:list", 0, -1);
 
   if (!messageIds.length) return [];
 
   // Her ID için mesaj detaylarını al
   const messages = await Promise.all(
-    messageIds.map(async (id) => {
-      const data = await redis.hGetAll(`message:${id}`);
-      if (!data || !data.id) return null;
+    messageIds.map(async (id: string) => {
+      const data = await client.hGetAll(`message:${id}`);
+
+      if (!data?.id) {
+        return null;
+      }
 
       return {
         id: data.id,
         content: data.content,
-        createdAt: parseInt(data.createdAt),
+        createdAt: parseInt(data.createdAt, 10),
       } satisfies Message;
     })
   );

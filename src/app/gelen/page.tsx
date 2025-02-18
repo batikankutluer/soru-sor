@@ -3,7 +3,7 @@
 import Login from "@/components/login";
 import Footer from "@/components/footer";
 import { cookies } from "next/headers";
-import { getMessages, type Message } from "@/lib/db";
+import { getMessages } from "@/lib/db";
 
 export default async function Home() {
   const cookieStore = await cookies();

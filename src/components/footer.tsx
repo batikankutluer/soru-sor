@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 const PROJECT_LINK = "soru-sor";
 
 export default function Footer() {
@@ -23,6 +21,14 @@ export default function Footer() {
               className="text-zinc-400 hover:text-zinc-300 transition-colors duration-200"
             >
               Kullanım Şartları
+            </a>
+            <a
+              href={`https://github.com/batikankutluer/${PROJECT_LINK}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-zinc-400 hover:text-zinc-300 transition-colors duration-200"
+            >
+              Github Projesi
             </a>
           </div>
         </div>
